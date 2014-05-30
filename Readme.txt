@@ -12,7 +12,7 @@ This plugin automatically generates an XML sitemap and advertises itself to sear
 
 It is designed to be run with no human intervention. Therefore, this plugin contains no options, buttons, switches, or levers.
 
-Requires at least PHP 5.1.3.
+Requires at least PHP 5.3.0.
 
 = Features =
 

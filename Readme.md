@@ -61,11 +61,11 @@ Sites marked "archive", "spam", or "deleted" are excluded.
 
 It defaults to the <code>large</code> size, as available.
 
-#### Do you use the post creation date, or the last modified date? = 
+#### Do you use the post creation date, or the last modified date?  
 The <code>lastmod</code> attribute in your sitemap uses a post's last modified date, not the post creation date. 
 
 This ensures that search engines are aware of content changes. 
 
-#### I don't see a link rel-sitemap tag in my header. Why not? =
+#### I don't see a link rel-sitemap tag in my header. Why not? 
 
 Make sure your theme's template includes <code><?php wp_head(); ?></code> in the header. 

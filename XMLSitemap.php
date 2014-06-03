@@ -108,16 +108,28 @@ class XMLSitemap {
 		);
 
 		// Get All Posts and Pages
-		// TODO: Cache this for a short while if our posts table is big or query response time is slow
-		query_posts( $args );
 
-		while ( have_posts() ) : the_post();
+		// Cache testing, incomplete
+		// $cache_key = md5("xml_sitemap_$this->sitemap_url");
+		// $query = wp_cache_get( $cache_key );
+		// if ( false === $query ) {
+		// 	$home = $xml->addChild('cache-status', 'Not cached in key ' . $cache_key);
+		// 	$query = new \WP_Query ( $args );
+		// 	wp_cache_set( $cache_key, $query );
+		// } else {
+		// 	$home = $xml->addChild('cache-status', 'Loaded from cache ' . $cache_key);
+		// }
+
+		$query = new \WP_Query ( $args );
+
+		while ( $query->have_posts() ) : $query->the_post();
             
             $item = $xml->addChild('url');
             $item->addChild('loc', get_the_permalink());
             $item->addChild('lastmod', get_the_modified_date(DATE_W3C) );
 
 			if ( has_post_thumbnail() ) {
+
 				$featured_image = get_post(get_post_thumbnail_id());
 				if(isset($featured_image->ID)) {
 					$thumb = wp_get_attachment_image_src( $featured_image->ID, 'large' );

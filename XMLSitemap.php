@@ -215,8 +215,9 @@ class XMLSitemap {
 	function clear_sitemap_cache( $post_id ){
 		if ( ! wp_is_post_revision( $post_id ) ){
 		
-			// wp_cache_delete seems buggy 
-			// doesn't work as expected with W3TC, or only seems to work on post update, not saving of a new pot
+			// wp_cache_delete doesn't seem to work perfectly with W3TC
+			// It only seems to work on post update, not saving of a new post
+			// However, wp_cache_delete works well on WPEngine 
 			wp_cache_delete( $this->cache_key );
 		
 		}

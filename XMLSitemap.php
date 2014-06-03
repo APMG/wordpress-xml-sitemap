@@ -4,7 +4,7 @@ Plugin Name: XML Sitemap
 Plugin URI: http://
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.1
+Version: 0.2
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
@@ -41,6 +41,7 @@ class XMLSitemap {
 		add_action( 'init', array( &$this, 'init_xml_sitemap' ) );
 
 		$this->sitemap_url = get_bloginfo('url').'/sitemap.xml';
+		$this->cache_key = $this::slug . ':' . $this->sitemap_url;
 
 	}
   
@@ -65,6 +66,7 @@ class XMLSitemap {
 		}
 
 		add_filter( 'robots_txt', array( &$this, 'robots_mod' ) );
+		add_action( 'save_post', array( &$this, 'clear_sitemap_cache' ) );
 
 	}
 
@@ -89,18 +91,13 @@ class XMLSitemap {
 
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd"></urlset>');
 
-        $home = $xml->addChild('url');
-        $home->addChild('loc', get_site_url());
-        $home->addChild('changefreq', 'always');
-        $home->addChild('priority', '1.0');
-
 		$custom_post_types = get_post_types(array(
 		   'public'   => true,
 		   'exclude_from_search' => false,
 		   '_builtin' => false
 		)); 
 
-		// var_dump($custom_post_types); exit();
+		// var_dump($custom_post_types); exit(); // debug
 
 		$args = array(
 			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
@@ -108,19 +105,25 @@ class XMLSitemap {
 		);
 
 		// Get All Posts and Pages
+		// Save query to object cache and output cache debug if WP_DEBUG enabled
+		$query = wp_cache_get( $this->cache_key );
+		if ( false === $query ) {
+			if(WP_DEBUG===true) {
+				$home = $xml->addChild('cache-status', 'Object Cache Miss: ' . $this->cache_key);
+			}
+			$query = new \WP_Query ( $args );
+			wp_cache_set( $this->cache_key, $query );
+		} else {
+			if(WP_DEBUG===true) {
+				$home = $xml->addChild('cache-status', 'Object Cache Hit: ' . $this->cache_key);
+			}
+		}
 
-		// Cache testing, incomplete
-		// $cache_key = md5("xml_sitemap_$this->sitemap_url");
-		// $query = wp_cache_get( $cache_key );
-		// if ( false === $query ) {
-		// 	$home = $xml->addChild('cache-status', 'Not cached in key ' . $cache_key);
-		// 	$query = new \WP_Query ( $args );
-		// 	wp_cache_set( $cache_key, $query );
-		// } else {
-		// 	$home = $xml->addChild('cache-status', 'Loaded from cache ' . $cache_key);
-		// }
-
-		$query = new \WP_Query ( $args );
+		// Add site url to top of sitemap
+        $home = $xml->addChild('url');
+        $home->addChild('loc', get_site_url());
+        $home->addChild('changefreq', 'always');
+        $home->addChild('priority', '1.0');
 
 		while ( $query->have_posts() ) : $query->the_post();
             
@@ -201,6 +204,22 @@ class XMLSitemap {
 		}
 	}
 
+	/**
+	 * Clear XML Sitemap cache for this site
+	 */
+	function clear_sitemap_cache( $post_id ){
+		if ( ! wp_is_post_revision( $post_id ) ){
+		
+			// unhook this function so it doesn't loop infinitely
+			remove_action('save_post', array( &$this, 'clear_sitemap_cache' ));
+		
+			wp_cache_delete( $this->cache_key );
+
+			// re-hook this function
+			add_action('save_post', array( &$this, 'clear_sitemap_cache' ));
+
+		}
+	}
 
 	/**
 	 * Advetise in robots.txt 

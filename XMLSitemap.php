@@ -4,7 +4,7 @@ Plugin Name: XML Sitemap
 Plugin URI: http://
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.2
+Version: 0.3
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
@@ -241,7 +241,12 @@ class XMLSitemap {
 			    'deleted'    => false,
 			); 
 
-			// TODO: Cache this request
+			/**
+			 * TODO: Cache wp_get_sites call for 60 minutes
+			 * TODO: Clear cache on and 'wpmu_create_blog' and 'update_option_blog_public' and related hooks
+			 * @link https://core.trac.wordpress.org/browser/tags/3.9.1/src/wp-includes/ms-functions.php#L2061
+			 */
+
 			$sites = wp_get_sites( $args );
 
 			foreach($sites as $site) {

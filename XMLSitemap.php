@@ -89,6 +89,23 @@ class XMLSitemap {
 			return;
 		}
 
+		$xml = wp_cache_get( $this->cache_key );
+		if ( false === $xml ) {
+			$xml = $this->get_sitemap_xml();
+			wp_cache_set( $this->cache_key, $xml );
+		} 
+
+		// $xml = $this->get_sitemap_xml();
+
+		status_header(200);
+		print $xml;
+		exit();
+
+	}
+
+
+	function get_sitemap_xml() {
+
 		date_default_timezone_set(get_option('timezone_string'));
 
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd" generated="'.date(\DateTime::RSS).'"></urlset>');
@@ -103,25 +120,11 @@ class XMLSitemap {
 
 		$args = array(
 			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
+			'orderby' => 'date',
 			'showposts' => 50000, // Sitemaps can contain no more than 50,000 URLs (http://support.google.com/webmasters/answer/183668)
 		);
 
-		// Get All Posts and Pages
-		// Save query to object cache and output cache debug if WP_DEBUG enabled
-		$query = wp_cache_get( $this->cache_key );
-		if ( false === $query ) {
-			if(WP_DEBUG===true) {
-				$home = $xml->addChild('cache-status', 'Object Cache Miss: ' . $this->cache_key);
-			}
-			$query = new \WP_Query ( $args );
-			wp_cache_set( $this->cache_key, $query );
-		} else {
-			if(WP_DEBUG===true) {
-				$home = $xml->addChild('cache-status', 'Object Cache Hit: ' . $this->cache_key);
-			}
-		}
-
-		// $query = new \WP_Query ( $args );		
+		$query = new \WP_Query ( $args );		
 
 		// Add site url to top of sitemap
         $home = $xml->addChild('url');
@@ -177,12 +180,10 @@ class XMLSitemap {
             $item->addChild('loc', get_tag_link( $tag->term_id ));
 		}
 
-		status_header(200);
-		print $xml->asXML();
-
-		exit();
+		return $xml->asXML();
 
 	}
+
 
 	/**
 	 * Append necessary HTTP headers for serving XML 
@@ -214,14 +215,10 @@ class XMLSitemap {
 	function clear_sitemap_cache( $post_id ){
 		if ( ! wp_is_post_revision( $post_id ) ){
 		
-			// unhook this function so it doesn't loop infinitely
-			remove_action('save_post', array( &$this, 'clear_sitemap_cache' ));
-		
+			// wp_cache_delete seems buggy 
+			// doesn't work as expected with W3TC, or only seems to work on post update, not saving of a new pot
 			wp_cache_delete( $this->cache_key );
-
-			// re-hook this function
-			add_action('save_post', array( &$this, 'clear_sitemap_cache' ));
-
+		
 		}
 	}
 

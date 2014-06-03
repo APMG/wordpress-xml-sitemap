@@ -118,17 +118,17 @@ class XMLSitemap {
             $item->addChild('lastmod', get_the_modified_date(DATE_W3C) );
 
 			if ( has_post_thumbnail() ) {
-
 				$featured_image = get_post(get_post_thumbnail_id());
-				$thumb = wp_get_attachment_image_src( $featured_image->ID, 'large' );
-				$thumb_url = $thumb['0'];
+				if(isset($featured_image->ID)) {
+					$thumb = wp_get_attachment_image_src( $featured_image->ID, 'large' );
+					$thumb_url = $thumb['0'];
 
-				$image = $item->addChild('image:image', NULL, "http://www.google.com/schemas/sitemap-image/1.1");
-				$image->addChild('image:loc', $thumb_url, "http://www.google.com/schemas/sitemap-image/1.1");
+					$image = $item->addChild('image:image', NULL, "http://www.google.com/schemas/sitemap-image/1.1");
+					$image->addChild('image:loc', $thumb_url, "http://www.google.com/schemas/sitemap-image/1.1");
 
-				$image->addChild('image:title', $featured_image->post_title, "http://www.google.com/schemas/sitemap-image/1.1");
-                $image->addChild('image:caption', $featured_image->post_excerpt, "http://www.google.com/schemas/sitemap-image/1.1");
-  
+					$image->addChild('image:title', $featured_image->post_title, "http://www.google.com/schemas/sitemap-image/1.1");			
+	                $image->addChild('image:caption', $featured_image->post_excerpt, "http://www.google.com/schemas/sitemap-image/1.1");
+				}
 			}
 
             $news = $item->addChild('news:news', NULL, "http://www.google.com/schemas/sitemap-news/0.9");

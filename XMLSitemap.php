@@ -9,7 +9,7 @@ Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
 
-  Copyright 2011 Paul Wenzel (pwenzel@mpr.org)
+  Copyright 2014 Paul Wenzel (pwenzel@mpr.org)
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2, as 

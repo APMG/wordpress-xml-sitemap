@@ -4,7 +4,7 @@ Plugin Name: XML Sitemap
 Plugin URI: http://
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.3
+Version: 0.3.1
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
@@ -37,8 +37,6 @@ class XMLSitemap {
 
 	function __construct() {
 
-		register_activation_hook( __FILE__, array( &$this, 'install_xml_sitemap' ) );
-
 		add_action( 'init', array( &$this, 'init_xml_sitemap' ) );
 
 		$this->sitemap_url = get_bloginfo('url').'/sitemap.xml';
@@ -46,14 +44,7 @@ class XMLSitemap {
 
 	}
   
-	/**
-	 * Runs when the plugin is activated
-	 * TODO: Clear plugin cache when activated/uninstalled
-	 */  
-	function install_xml_sitemap() {
-		// do not generate any output here
-	}
-  
+
 	/**
 	 * Runs when the plugin is initialized
 	 */
@@ -66,7 +57,7 @@ class XMLSitemap {
 			add_filter( 'plugin_action_links_'.plugin_basename(__FILE__), array( &$this, 'plugin_settings_link' ) );
 		}
 
-		add_filter( 'robots_txt', array( &$this, 'robots_mod' ) );
+		add_filter( 'robots_txt', array( &$this, 'robots_modify' ) );
 		add_action( 'save_post', array( &$this, 'clear_sitemap_cache' ) );
 
 	}
@@ -104,7 +95,10 @@ class XMLSitemap {
 
 	}
 
-
+	/**
+	 * Generate XML with SimpleXMLElement
+	 * @return string
+	 */
 	function get_sitemap_xml() {
 
 		date_default_timezone_set(get_option('timezone_string'));
@@ -230,7 +224,7 @@ class XMLSitemap {
 	 * @link http://wordpress.stackexchange.com/questions/38859/create-unique-robots-txt-for-every-site-on-multisite-installation
 	 * @return string
 	 */
-	function robots_mod( $output ) {
+	function robots_modify( $output ) {
 
 		// multisite 
 		if ( is_multisite() ) { 
@@ -243,7 +237,7 @@ class XMLSitemap {
 			); 
 
 			/**
-			 * TODO: Cache wp_get_sites call for 60 minutes
+			 * TODO: Cache wp_get_sites call for 60 minutes (useful for large networks)
 			 * TODO: Clear cache on and 'wpmu_create_blog' and 'update_option_blog_public' and related hooks
 			 * @link https://core.trac.wordpress.org/browser/tags/3.9.1/src/wp-includes/ms-functions.php#L2061
 			 */

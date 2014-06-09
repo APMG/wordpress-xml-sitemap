@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: XML Sitemap
+Plugin Name: News and Image XML Sitemap
 Plugin URI: http://
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.3.1
+Version: 0.3.2
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:

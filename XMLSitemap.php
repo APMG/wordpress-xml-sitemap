@@ -32,7 +32,8 @@ class XMLSitemap {
 
 	const name = 'XML Sitemap';
 	const slug = 'xml_sitemap';
-	
+	const ns_sitemap_image = 'http://www.google.com/schemas/sitemap-image/1.1';	
+	const ns_sitemap_news = 'http://www.google.com/schemas/sitemap-news/0.9';
 
 	function __construct() {
 
@@ -145,15 +146,15 @@ class XMLSitemap {
 					$thumb = wp_get_attachment_image_src( $featured_image->ID, 'large' );
 					$thumb_url = $thumb['0'];
 
-					$image = $item->addChild('image:image', NULL, "http://www.google.com/schemas/sitemap-image/1.1");
-					$image->addChild('image:loc', $thumb_url, "http://www.google.com/schemas/sitemap-image/1.1");
+					$image = $item->addChild('image:image', NULL, $this::ns_sitemap_image);
+					$image->addChild('image:loc', $thumb_url, $this::ns_sitemap_image);
 
-					$image->addChild('image:title', $featured_image->post_title, "http://www.google.com/schemas/sitemap-image/1.1");			
-	                $image->addChild('image:caption', $featured_image->post_excerpt, "http://www.google.com/schemas/sitemap-image/1.1");
+					$image->addChild('image:title', $featured_image->post_title, $this::ns_sitemap_image);			
+	                $image->addChild('image:caption', $featured_image->post_excerpt, $this::ns_sitemap_image);
 				}
 			}
 
-            $news = $item->addChild('news:news', NULL, "http://www.google.com/schemas/sitemap-news/0.9");
+            $news = $item->addChild('news:news', NULL, $this::ns_sitemap_news);
             $news->addChild('news:publication_date', get_the_date(DATE_W3C) );
             $news->addChild('news:title', get_the_title());
 

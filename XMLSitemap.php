@@ -101,7 +101,9 @@ class XMLSitemap {
 	 */
 	function get_sitemap_xml() {
 
-		date_default_timezone_set(get_option('timezone_string'));
+		if(get_option('timezone_string')) {
+			date_default_timezone_set(get_option('timezone_string'));			
+		}
 
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd" generated="'.date(\DateTime::RSS).'"></urlset>');
 

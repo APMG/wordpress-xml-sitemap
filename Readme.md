@@ -19,6 +19,7 @@ Requires at least PHP 5.3.0.
 ### Features 
 
 * Generates an XML sitemap at the root of your site (e.g. http://example.com/sitemap.xml)
+* Uses <a href="http://codex.wordpress.org/Class_Reference/WP_Object_Cache">object cache</a> for improved performance
 * Includes custom post types
 * Advertises itself in <code>robots.txt</code> (e.g. Sitemap: http://example.com/sitemap.xml)
 * Advertises itself in HTML HEAD with <code>link rel-sitemap</code> tag (See http://microformats.org/wiki/rel-sitemap)

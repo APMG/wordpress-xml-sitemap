@@ -27,7 +27,7 @@ Requires at least PHP 5.3.0.
 * Includes last modified dates
 * Includes category and tag archives
 * <code>news:language</code> follows your blog's language setting
-* The sitemap will display or advertise itself if <a href="http://en.support.wordpress.com/search-engines/">Discourage search engines</a> is checked
+* The sitemap will not display or advertise itself if <a href="http://en.support.wordpress.com/search-engines/">Discourage search engines</a> is checked
 
 ## Installation 
 

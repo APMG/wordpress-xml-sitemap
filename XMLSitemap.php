@@ -152,14 +152,14 @@ class XMLSitemap {
 
             $news = $item->addChild('news:news', NULL, $this::ns_sitemap_news);
             $news->addChild('news:publication_date', get_the_date(DATE_W3C) );
-            $news->addChild('news:title', get_the_title());
+            $news->addChild('news:title', get_the_title_rss());
 
             // Not sure if news:genres should be included or not
             // $news->addChild('news:genres', 'PressRelease, Blog'); // https://support.google.com/news/publisher/answer/93992
 
             $publication = $news->addChild('news:publication');
-            $publication->addChild('news:name', get_bloginfo('name'));
-            $publication->addChild('news:language', get_bloginfo('language'));
+            $publication->addChild('news:name', get_bloginfo_rss('name'));
+            $publication->addChild('news:language', get_bloginfo_rss('language'));
 
  		endwhile;
 

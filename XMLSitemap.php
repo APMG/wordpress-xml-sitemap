@@ -4,12 +4,12 @@ Plugin Name: News and Image XML Sitemap
 Plugin URI: http://
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.4.1
+Version: 0.4.2
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
 
-  Copyright 2014 Paul Wenzel (pwenzel@mpr.org)
+  Copyright 2015 Paul Wenzel (pwenzel@mpr.org)
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License, version 2, as 
@@ -145,8 +145,8 @@ class XMLSitemap {
 					$image = $item->addChild('image:image', NULL, $this::ns_sitemap_image);
 					$image->addChild('image:loc', $thumb_url, $this::ns_sitemap_image);
 
-					$image->addChild('image:title', $featured_image->post_title, $this::ns_sitemap_image);			
-	                $image->addChild('image:caption', $featured_image->post_excerpt, $this::ns_sitemap_image);
+					$image->addChild('image:title', htmlspecialchars($featured_image->post_title), $this::ns_sitemap_image);			
+	                $image->addChild('image:caption', htmlspecialchars($featured_image->post_excerpt), $this::ns_sitemap_image);
 				}
 			}
 

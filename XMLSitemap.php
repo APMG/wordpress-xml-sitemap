@@ -44,7 +44,6 @@ class XMLSitemap {
 
 	}
   
-
 	/**
 	 * Runs when the plugin is initialized
 	 */
@@ -62,14 +61,14 @@ class XMLSitemap {
 
 	}
 
-	// Add settings link on plugin page
+	/**
+	 * Add settings link on plugin page
+	 */
 	function plugin_settings_link($links) { 
 	  $settings_link = '<a href="'.$this->sitemap_url.'">View Sitemap</a>'; 
 	  array_unshift($links, $settings_link); 
 	  return $links; 
 	}
-
-
 
 	/**
 	 * Query for posts, pages, categories, and tags
@@ -87,8 +86,6 @@ class XMLSitemap {
 			wp_cache_set( $this->cache_key, $xml );
 		} 
 
-		// $xml = $this->get_sitemap_xml();
-
 		status_header(200);
 		print $xml;
 		exit();
@@ -98,6 +95,7 @@ class XMLSitemap {
 	/**
 	 * Generate XML with SimpleXMLElement
 	 * @return string
+	 * @todo Make number of posts configurable via constant in wp-config.php
 	 */
 	function get_sitemap_xml() {
 
@@ -112,8 +110,6 @@ class XMLSitemap {
 		   'exclude_from_search' => false,
 		   '_builtin' => false
 		)); 
-
-		// var_dump($custom_post_types); exit(); // debug
 
 		$args = array(
 			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
@@ -154,7 +150,7 @@ class XMLSitemap {
             $news->addChild('news:publication_date', get_the_date(DATE_W3C) );
             $news->addChild('news:title', get_the_title_rss());
 
-            // Not sure if news:genres should be included or not
+            // TODO: Not sure if news:genres should be included or not
             // $news->addChild('news:genres', 'PressRelease, Blog'); // https://support.google.com/news/publisher/answer/93992
 
             $publication = $news->addChild('news:publication');
@@ -228,7 +224,7 @@ class XMLSitemap {
 	 */
 	function robots_modify( $output ) {
 
-		// multisite 
+		// Multisite 
 		if ( is_multisite() ) { 
 
 			$args = array(
@@ -239,8 +235,8 @@ class XMLSitemap {
 			); 
 
 			/**
-			 * TODO: Cache wp_get_sites call for 60 minutes (useful for large networks)
-			 * TODO: Clear cache on and 'wpmu_create_blog' and 'update_option_blog_public' and related hooks
+			 * @todo Cache wp_get_sites call for 60 minutes (useful for large networks)
+			 * @todo Clear cache on and 'wpmu_create_blog' and 'update_option_blog_public' and related hooks
 			 * @link https://core.trac.wordpress.org/browser/tags/3.9.1/src/wp-includes/ms-functions.php#L2061
 			 */
 
@@ -251,7 +247,7 @@ class XMLSitemap {
 				$output .= 'Sitemap: ' . $url . PHP_EOL;
 			}
 
-		// not multisite
+		// Not Multisite
 		} else {
 			if(get_option('blog_public')) {
 				$url = get_bloginfo('url') . '/sitemap.xml';

@@ -217,7 +217,7 @@ class XMLSitemap {
 	}
 
 	/**
-	 * Advetise in robots.txt 
+	 * Advertise in robots.txt 
 	 * @link https://trepmal.com/2011/04/03/change-the-virtual-robots-txt-file/
 	 * @link http://wordpress.stackexchange.com/questions/38859/create-unique-robots-txt-for-every-site-on-multisite-installation
 	 * @return string

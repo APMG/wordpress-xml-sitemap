@@ -4,7 +4,7 @@ Plugin Name: News and Image XML Sitemap
 Plugin URI: http://
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.4.2
+Version: 0.5.0
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
@@ -71,12 +71,18 @@ class XMLSitemap {
 	}
 
 	/**
-	 * Add settings link on plugin page
+	 * Add settings links on plugin page
 	 */
 	function plugin_settings_link($links) { 
-	  $settings_link = '<a href="'.$this->sitemap_url.'">View Sitemap</a>'; 
-	  array_unshift($links, $settings_link); 
-	  return $links; 
+
+		$settings_link = '<a href="'.$this->sitemap_index_url.'">Sitemap Index</a>'; 
+		array_unshift($links, $settings_link); 
+
+		$settings_link = '<a href="'.$this->sitemap_url.'">View Sitemap</a>'; 
+		array_unshift($links, $settings_link); 
+
+		return $links; 
+		
 	}
 
 	/**

@@ -37,10 +37,17 @@ class XMLSitemap {
 
 	function __construct() {
 
+		if(get_option('timezone_string')) {
+			date_default_timezone_set(get_option('timezone_string'));			
+		}
+
 		add_action( 'init', array( &$this, 'init_xml_sitemap' ) );
 
 		$this->sitemap_url = get_bloginfo('url').'/sitemap.xml';
 		$this->cache_key = $this::slug . ':' . $this->sitemap_url;
+		$this->sitemap_index_url = get_bloginfo('url').'/sitemapindex.xml';
+		$this->sitemap_index_cache_key = $this::slug . ':' . $this->sitemap_index_url;
+		$this->posts_per_page = 100;
 
 	}
   
@@ -51,6 +58,7 @@ class XMLSitemap {
 
 		if(get_option('blog_public')) {
 			add_action( 'template_redirect', array( &$this, 'render_sitemap' ) );
+			add_action( 'template_redirect', array( &$this, 'render_sitemap_index' ) );
 			add_action( 'send_headers', array( &$this, 'add_http_headers' ) );
 			add_action( 'wp_head', array( &$this, 'append_sitemap_link_tag' ) );
 			add_filter( 'plugin_action_links_'.plugin_basename(__FILE__), array( &$this, 'plugin_settings_link' ) );
@@ -93,16 +101,34 @@ class XMLSitemap {
 	}
 
 	/**
-	 * Generate XML with SimpleXMLElement
+	 * Render Sitemap Index
+	 * @link http://www.sitemaps.org/protocol.html#index
+	 * @link https://support.google.com/webmasters/answer/75712?hl=en
+	 */
+	function render_sitemap_index() {
+		if ( ! preg_match( '/sitemapindex\.xml/', $_SERVER['REQUEST_URI'] ) ) {
+			return;
+		}
+
+		$xml = wp_cache_get( $this->sitemap_index_cache_key );
+		if ( false === $xml ) {
+			$xml = $this->get_sitemap_index_xml();
+			wp_cache_set( $this->sitemap_index_cache_key, $xml );
+		} 
+
+		status_header(200);
+		print $xml;
+		exit();
+
+	}
+
+	/**
+	 * Generate XML Sitemap with SimpleXMLElement
 	 * @return string
 	 * @todo Make number of posts configurable via querystring
 	 * @link http://support.google.com/webmasters/answer/183668 ()
 	 */
 	function get_sitemap_xml() {
-
-		if(get_option('timezone_string')) {
-			date_default_timezone_set(get_option('timezone_string'));			
-		}
 
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd"></urlset>');
 
@@ -131,7 +157,7 @@ class XMLSitemap {
 
 		// Use Pagination if "?page=1" is passed
 		if($page) {
-			$args['posts_per_page'] = 100;
+			$args['posts_per_page'] = $this->posts_per_page;
 			$args['paged'] = $page;
 		} else {
 			$args['nopaging'] = true;
@@ -205,6 +231,34 @@ class XMLSitemap {
 
 	}
 
+
+	/**
+	 * Generate XML Sitemap Index with SimpleXMLElement
+	 * @return string
+	 */
+	function get_sitemap_index_xml() {
+
+		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>');
+
+		// Add attributes for debugging purposes
+		$xml->addAttribute('generated', date(\DateTime::RSS));
+
+		// Get the most recently modified post date
+		$last_modified_post = get_posts('numberposts=1&orderby=modified');
+		if(isset($last_modified_post[0]->post_modified_gmt)) {
+			$last_modified_date = $last_modified_post[0]->post_modified_gmt;
+		} else {
+			$last_modified_date = null;
+		}
+
+		$item = $xml->addChild('sitemap');
+		$item->addChild('loc', $this->sitemap_url);
+		$item->addChild('lastmod', $last_modified_date ); // TODO: Format this as DATE_W3C
+
+		return $xml->asXML();
+	}
+
+
 	/**
 	 * @todo Utility for ensuring strings are XML Safe
 	 * This function isn't ready yet, it is just a placeholder.
@@ -226,7 +280,7 @@ class XMLSitemap {
 	 * @link http://stackoverflow.com/questions/4832357/whats-the-difference-between-text-xml-vs-application-xml-for-webservice-respons
 	 */
 	function add_http_headers() {
-		if ( ! preg_match( '/sitemap\.xml/', $_SERVER['REQUEST_URI'] ) ) {
+		if ( ! preg_match( '/(sitemap|sitemapindex)\.xml/', $_SERVER['REQUEST_URI'] ) ) {
 			return;
 		}
 		header('Content-Type: application/xml; charset=utf-8' );

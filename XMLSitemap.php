@@ -194,9 +194,14 @@ class XMLSitemap {
 
 					$image = $item->addChild('image:image', NULL, $this::ns_sitemap_image);
 					$image->addChild('image:loc', $thumb_url, $this::ns_sitemap_image);
-
 					$image->addChild('image:title', htmlspecialchars($featured_image->post_title), $this::ns_sitemap_image);			
 					$image->addChild('image:caption', htmlspecialchars($featured_image->post_excerpt), $this::ns_sitemap_image);
+
+					// UTF8 Debug Test
+					// $utf8_sample = 'I am text with Ünicödé & HTML €ntities ©';
+					// $image->addChild('image:title', htmlspecialchars($utf8_sample), $this::ns_sitemap_image);			
+					// $image->addChild('image:caption', htmlspecialchars($utf8_sample), $this::ns_sitemap_image);
+
 				}
 			}
 
@@ -281,21 +286,6 @@ class XMLSitemap {
 		}
 
 		return $xml->asXML();
-	}
-
-
-	/**
-	 * @todo Utility for ensuring strings are XML Safe
-	 * This function isn't ready yet, it is just a placeholder.
-	 * @link http://stackoverflow.com/questions/2822774/php-is-htmlentities-sufficient-for-creating-xml-safe-values
-	 * @link http://stackoverflow.com/questions/46483/htmlentities-vs-htmlspecialchars
-	 */
-	function xmlSafe($string) {
-		$dom = new DOMDocument;
-		$element = $dom->createElement('Element');
-		$element->appendChild( $dom->createTextNode('I am text with Ünicödé & HTML €ntities ©') );
-		$dom->appendChild($element);
-		return $dom->saveXml();
 	}
 
 

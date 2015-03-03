@@ -215,16 +215,26 @@ class XMLSitemap {
 
 		wp_reset_query();
 
-		// Get all categories
-		foreach (get_categories() as $category) {
-			$item = $xml->addChild('url');
-			$item->addChild('loc', get_category_link( $category->term_id ));
+
+		// Advertise taxonomy terms on regular non-paginated sitemap
+		if($args['nopaging'] = true) {
+
+			// Get all categories
+			foreach (get_categories() as $category) {
+				$item = $xml->addChild('url');
+				$item->addChild('loc', get_category_link( $category->term_id ));
+			}
+
+			// Get all tags
+			foreach ( get_tags() as $tag ) {
+				$item = $xml->addChild('url');
+				$item->addChild('loc', get_tag_link( $tag->term_id ));
+			}
+
 		}
 
-		// Get all tags
-		foreach ( get_tags() as $tag ) {
-			$item = $xml->addChild('url');
-			$item->addChild('loc', get_tag_link( $tag->term_id ));
+		if(WP_DEBUG) {
+			$xml->addAttribute('debug', get_num_queries() . ' queries in ' . timer_stop( 0 ) . ' seconds' );
 		}
 
 		return $xml->asXML();
@@ -264,6 +274,10 @@ class XMLSitemap {
 			$item = $xml->addChild('sitemap');
 			$item->addChild('loc', $this->sitemap_url . "?page={$i}");
 			$item->addChild('lastmod', $last_modified_date ); // TODO: Format this as DATE_W3C
+		}
+
+		if(WP_DEBUG) {
+			$xml->addAttribute('debug', get_num_queries() . ' queries in ' . timer_stop( 0 ) . ' seconds' );
 		}
 
 		return $xml->asXML();

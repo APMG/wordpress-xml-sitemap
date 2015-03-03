@@ -159,7 +159,7 @@ class XMLSitemap {
 		// Generate base arguments for WP_Query
 		$args = array(
 			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
-			'orderby' => 'date',
+			'orderby' => 'modified',
 			'order' => 'DESC'
 		);
 

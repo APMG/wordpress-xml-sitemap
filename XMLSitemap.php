@@ -62,6 +62,7 @@ class XMLSitemap {
 			add_action( 'send_headers', array( &$this, 'add_http_headers' ) );
 			add_action( 'wp_head', array( &$this, 'append_sitemap_link_tag' ) );
 			add_filter( 'plugin_action_links_'.plugin_basename(__FILE__), array( &$this, 'plugin_settings_link' ) );
+			// add_filter( 'query_vars', array( &$this, 'add_query_vars' ));
 		}
 
 		add_filter( 'robots_txt', array( &$this, 'robots_modify' ) );
@@ -132,8 +133,15 @@ class XMLSitemap {
 
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd"></urlset>');
 
-		// Setup Pagination
+		// Setup Pagination	
 		$page = get_query_var( 'page', 0 );
+
+		// Add parameter to show all entries
+		if( (get_query_var( 'show', 0 )) == 'all') { 
+			$show_all = true;
+		} else {
+			$show_all = false;
+		}
 
 		// Get available public custom post types
 		$custom_post_types = get_post_types(array(
@@ -156,7 +164,10 @@ class XMLSitemap {
 		);
 
 		// Use Pagination if "?page=1" is passed
-		if($page) {
+		if($show_all) {
+			$args['posts_per_page'] = -1;
+		}
+		elseif($page) {
 			$args['posts_per_page'] = $this->posts_per_page;
 			$args['paged'] = $page;
 		} else {
@@ -288,6 +299,13 @@ class XMLSitemap {
 		return $xml->asXML();
 	}
 
+	/**
+	 * Register Query Argument
+	 */
+	function add_query_vars($public_query_vars) {
+	    $public_query_vars[] = 'show';
+	    return $public_query_vars;
+	}
 
 	/**
 	 * Append necessary HTTP headers for serving XML 
@@ -363,7 +381,7 @@ class XMLSitemap {
 		// Not Multisite
 		} else {
 			if(get_option('blog_public')) {
-				$url = get_bloginfo('url') . '/sitemap.xml';
+				$url = get_bloginfo('url') . '/sitemapindex.xml';
 				$output .= 'Sitemap: ' . $url . PHP_EOL;
 			}
 		}

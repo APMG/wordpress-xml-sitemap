@@ -113,7 +113,7 @@ class XMLSitemap {
 	 * @link https://support.google.com/webmasters/answer/75712?hl=en
 	 */
 	function render_sitemap_index() {
-		if ( ! preg_match( '/sitemapindex\.xml/', $_SERVER['REQUEST_URI'] ) ) {
+		if ( ! preg_match( '/sitemapindex\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
 			return;
 		}
 
@@ -337,10 +337,17 @@ class XMLSitemap {
 	 * @link http://stackoverflow.com/questions/4832357/whats-the-difference-between-text-xml-vs-application-xml-for-webservice-respons
 	 */
 	function add_http_headers() {
-		if ( ! preg_match( '/(sitemap|sitemapindex)\.xml/', $_SERVER['REQUEST_URI'] ) ) {
+
+		if ( preg_match( '/sitemap\.xml/', $_SERVER['REQUEST_URI'] ) ) {
+			header('Content-Type: application/xml; charset=utf-8');
+		}
+		else if ( preg_match( '/sitemapindex\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
+			header('Content-Type: application/xml; charset=utf-8');
+		} 
+		else {
 			return;
 		}
-		header('Content-Type: application/xml; charset=utf-8' );
+ 
 	}
 
 	/**

@@ -96,6 +96,7 @@ class XMLSitemap {
 	 * Generate XML with SimpleXMLElement
 	 * @return string
 	 * @todo Make number of posts configurable via querystring
+	 * @link http://support.google.com/webmasters/answer/183668 ()
 	 */
 	function get_sitemap_xml() {
 
@@ -122,9 +123,8 @@ class XMLSitemap {
 			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
 			'orderby' => 'date',
 			'order' => 'DESC',
-			// 'date_query' => $date_query,
-			// 'posts_per_page' => 2, // Sitemaps can contain no more than 50,000 URLs (http://support.google.com/webmasters/answer/183668)
-			// 'paged' => 2,
+			'date_query' => $date_query,
+			'posts_per_page' => -1
 		);
 
 		$query = new \WP_Query ( $args );		

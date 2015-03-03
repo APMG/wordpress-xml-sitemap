@@ -238,22 +238,33 @@ class XMLSitemap {
 	 */
 	function get_sitemap_index_xml() {
 
-		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>');
-
-		// Add attributes for debugging purposes
-		$xml->addAttribute('generated', date(\DateTime::RSS));
-
 		// Get the most recently modified post date
-		$last_modified_post = get_posts('numberposts=1&orderby=modified');
+		$last_modified_post = get_posts('numberposts=1&orderby=modified'); // TODO: Check pages and custom posts types as well.
 		if(isset($last_modified_post[0]->post_modified_gmt)) {
 			$last_modified_date = $last_modified_post[0]->post_modified_gmt;
 		} else {
 			$last_modified_date = null;
 		}
 
+		// Initialize the XML
+		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>');
+
+		// Add attributes for debugging purposes
+		$xml->addAttribute('generated', date(\DateTime::RSS));
+
 		$item = $xml->addChild('sitemap');
 		$item->addChild('loc', $this->sitemap_url);
 		$item->addChild('lastmod', $last_modified_date ); // TODO: Format this as DATE_W3C
+
+		$total_entries = wp_count_posts()->publish + wp_count_posts('page')->publish; // TODO: Count all posts, pages and custom post types
+
+		$number_of_sitemaps_in_index = ceil( $total_entries / $this->posts_per_page );
+
+		for ($i=1; $i <= $number_of_sitemaps_in_index; $i++) { 
+			$item = $xml->addChild('sitemap');
+			$item->addChild('loc', $this->sitemap_url . "?page={$i}");
+			$item->addChild('lastmod', $last_modified_date ); // TODO: Format this as DATE_W3C
+		}
 
 		return $xml->asXML();
 	}
@@ -308,7 +319,8 @@ class XMLSitemap {
 			// It only seems to work on post update, not saving of a new post
 			// However, wp_cache_delete works well on WPEngine 
 			wp_cache_delete( $this->cache_key );
-		
+			wp_cache_delete( $this->sitemap_index_cache_key );
+
 		}
 	}
 
@@ -316,6 +328,7 @@ class XMLSitemap {
 	 * Advertise in robots.txt 
 	 * @link https://trepmal.com/2011/04/03/change-the-virtual-robots-txt-file/
 	 * @link http://wordpress.stackexchange.com/questions/38859/create-unique-robots-txt-for-every-site-on-multisite-installation
+	 * @todo return sitemap index files instead of sitemaps
 	 * @return string
 	 */
 	function robots_modify( $output ) {

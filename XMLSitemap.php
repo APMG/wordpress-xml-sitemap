@@ -264,15 +264,33 @@ class XMLSitemap {
 	 */
 	function get_sitemap_index_xml() {
 
-		// Get the most recently modified post date
-		$last_modified_post = get_posts('numberposts=1&orderby=modified'); // TODO: Check pages and custom posts types as well.
-		if(isset($last_modified_post[0]->post_modified_gmt)) {
-			$last_modified_date = $last_modified_post[0]->post_modified_gmt;
-		} else {
-			$last_modified_date = null;
-		}
+		// Get the most recently modified post/page/custom date
+		$last_modified_date = null;
 
-		// Initialize the XML
+		// Get available public custom post types
+		$custom_post_types = get_post_types(array(
+		   'public'   => true,
+		   'exclude_from_search' => false,
+		   '_builtin' => false
+		)); 
+
+		// Generate arguments for WP_Query
+		$args = array(
+			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
+			'orderby' => 'modified',
+			'order' => 'DESC',
+			'posts_per_page' => 1
+		);
+
+		$query = new \WP_Query ( $args );
+
+		// Set the last modified date to that of the latest post
+		while ( $query->have_posts() ) : $query->the_post();
+			$last_modified_date = get_the_modified_date(DATE_W3C);
+		endwhile;
+
+
+		// Initialize the XML for SitemapIndex
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>');
 
 		// Add attributes for debugging purposes
@@ -280,7 +298,7 @@ class XMLSitemap {
 
 		$item = $xml->addChild('sitemap');
 		$item->addChild('loc', $this->sitemap_url);
-		$item->addChild('lastmod', $last_modified_date ); // TODO: Format this as DATE_W3C
+		$item->addChild('lastmod', $last_modified_date ); 
 
 		$total_entries = wp_count_posts()->publish + wp_count_posts('page')->publish; // TODO: Count all posts, pages and custom post types
 
@@ -289,7 +307,7 @@ class XMLSitemap {
 		for ($i=1; $i <= $number_of_sitemaps_in_index; $i++) { 
 			$item = $xml->addChild('sitemap');
 			$item->addChild('loc', $this->sitemap_url . "?page={$i}");
-			$item->addChild('lastmod', $last_modified_date ); // TODO: Format this as DATE_W3C
+			$item->addChild('lastmod', $last_modified_date ); 
 		}
 
 		if(WP_DEBUG) {

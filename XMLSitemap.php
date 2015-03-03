@@ -95,7 +95,7 @@ class XMLSitemap {
 	/**
 	 * Generate XML with SimpleXMLElement
 	 * @return string
-	 * @todo Make number of posts configurable via constant in wp-config.php
+	 * @todo Make number of posts configurable via querystring
 	 */
 	function get_sitemap_xml() {
 
@@ -103,7 +103,7 @@ class XMLSitemap {
 			date_default_timezone_set(get_option('timezone_string'));			
 		}
 
-		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd" generated="'.date(\DateTime::RSS).'"></urlset>');
+		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd"></urlset>');
 
 		$custom_post_types = get_post_types(array(
 		   'public'   => true,
@@ -111,25 +111,38 @@ class XMLSitemap {
 		   '_builtin' => false
 		)); 
 
+		// TODO: Don't use date-based query if pagination is enabled
+		$date_query = array(
+			array(
+				'after' => '1 week ago' // filter posts from last week
+			)
+		);
+
 		$args = array(
 			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
 			'orderby' => 'date',
-			'showposts' => 50000, // Sitemaps can contain no more than 50,000 URLs (http://support.google.com/webmasters/answer/183668)
+			'order' => 'DESC',
+			// 'date_query' => $date_query,
+			// 'posts_per_page' => 2, // Sitemaps can contain no more than 50,000 URLs (http://support.google.com/webmasters/answer/183668)
+			// 'paged' => 2,
 		);
 
 		$query = new \WP_Query ( $args );		
 
+		// Add attributes for debugging purposes
+		$xml->addAttribute('generated', date(\DateTime::RSS));
+
 		// Add site url to top of sitemap
-        $home = $xml->addChild('url');
-        $home->addChild('loc', get_site_url());
-        $home->addChild('changefreq', 'always');
-        $home->addChild('priority', '1.0');
+		$home = $xml->addChild('url');
+		$home->addChild('loc', get_site_url());
+		$home->addChild('changefreq', 'always');
+		$home->addChild('priority', '1.0');
 
 		while ( $query->have_posts() ) : $query->the_post();
-            
-            $item = $xml->addChild('url');
-            $item->addChild('loc', get_the_permalink());
-            $item->addChild('lastmod', get_the_modified_date(DATE_W3C) );
+			
+			$item = $xml->addChild('url');
+			$item->addChild('loc', get_the_permalink());
+			$item->addChild('lastmod', get_the_modified_date(DATE_W3C) );
 
 			if ( has_post_thumbnail() ) {
 
@@ -142,39 +155,53 @@ class XMLSitemap {
 					$image->addChild('image:loc', $thumb_url, $this::ns_sitemap_image);
 
 					$image->addChild('image:title', htmlspecialchars($featured_image->post_title), $this::ns_sitemap_image);			
-	                $image->addChild('image:caption', htmlspecialchars($featured_image->post_excerpt), $this::ns_sitemap_image);
+					$image->addChild('image:caption', htmlspecialchars($featured_image->post_excerpt), $this::ns_sitemap_image);
 				}
 			}
 
-            $news = $item->addChild('news:news', NULL, $this::ns_sitemap_news);
-            $news->addChild('news:publication_date', get_the_date(DATE_W3C) );
-            $news->addChild('news:title', get_the_title_rss());
+			$news = $item->addChild('news:news', NULL, $this::ns_sitemap_news);
+			$news->addChild('news:publication_date', get_the_date(DATE_W3C) );
+			$news->addChild('news:title', get_the_title_rss());
 
-            // TODO: Not sure if news:genres should be included or not
-            // $news->addChild('news:genres', 'PressRelease, Blog'); // https://support.google.com/news/publisher/answer/93992
+			// TODO: Not sure if news:genres should be included or not
+			// $news->addChild('news:genres', 'PressRelease, Blog'); // https://support.google.com/news/publisher/answer/93992
 
-            $publication = $news->addChild('news:publication');
-            $publication->addChild('news:name', get_bloginfo_rss('name'));
-            $publication->addChild('news:language', get_bloginfo_rss('language'));
+			$publication = $news->addChild('news:publication');
+			$publication->addChild('news:name', get_bloginfo_rss('name'));
+			$publication->addChild('news:language', get_bloginfo_rss('language'));
 
- 		endwhile;
+		endwhile;
 
 		wp_reset_query();
 
 		// Get all categories
 		foreach (get_categories() as $category) {
 			$item = $xml->addChild('url');
-            $item->addChild('loc', get_category_link( $category->term_id ));
+			$item->addChild('loc', get_category_link( $category->term_id ));
 		}
 
 		// Get all tags
 		foreach ( get_tags() as $tag ) {
 			$item = $xml->addChild('url');
-            $item->addChild('loc', get_tag_link( $tag->term_id ));
+			$item->addChild('loc', get_tag_link( $tag->term_id ));
 		}
 
 		return $xml->asXML();
 
+	}
+
+	/**
+	 * @todo Utility for ensuring strings are XML Safe
+	 * This function isn't ready yet, it is just a placeholder.
+	 * @link http://stackoverflow.com/questions/2822774/php-is-htmlentities-sufficient-for-creating-xml-safe-values
+	 * @link http://stackoverflow.com/questions/46483/htmlentities-vs-htmlspecialchars
+	 */
+	function xmlSafe($string) {
+		$dom = new DOMDocument;
+		$element = $dom->createElement('Element');
+		$element->appendChild( $dom->createTextNode('I am text with Ünicödé & HTML €ntities ©') );
+		$dom->appendChild($element);
+		return $dom->saveXml();
 	}
 
 
@@ -228,10 +255,10 @@ class XMLSitemap {
 		if ( is_multisite() ) { 
 
 			$args = array(
-			    'public'     => true,
-			    'archived'   => false,
-			    'spam'       => false,
-			    'deleted'    => false,
+				'public'     => true,
+				'archived'   => false,
+				'spam'       => false,
+				'deleted'    => false,
 			); 
 
 			/**

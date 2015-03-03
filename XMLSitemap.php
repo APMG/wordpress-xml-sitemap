@@ -76,7 +76,7 @@ class XMLSitemap {
 	 * http://www.sitemaps.org/
 	 */
 	function render_sitemap() {
-		if ( ! preg_match( '/sitemap\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
+		if ( ! preg_match( '/sitemap\.xml/', $_SERVER['REQUEST_URI'] ) ) {
 			return;
 		}
 
@@ -106,31 +106,46 @@ class XMLSitemap {
 
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd"></urlset>');
 
+		// Setup Pagination
+		$page = get_query_var( 'page', 0 );
+
+		// Get available public custom post types
 		$custom_post_types = get_post_types(array(
 		   'public'   => true,
 		   'exclude_from_search' => false,
 		   '_builtin' => false
 		)); 
 
-		// TODO: Don't use date-based query if pagination is enabled
 		$date_query = array(
 			array(
 				'after' => '1 week ago' // filter posts from last week
 			)
 		);
 
+		// Generate base arguments for WP_Query
 		$args = array(
 			'post_type' => array_merge( array( 'post', 'page', ), $custom_post_types),
 			'orderby' => 'date',
-			'order' => 'DESC',
-			'date_query' => $date_query,
-			'posts_per_page' => -1
+			'order' => 'DESC'
 		);
+
+		// Use Pagination if "?page=1" is passed
+		if($page) {
+			$args['posts_per_page'] = 100;
+			$args['paged'] = $page;
+		} else {
+			$args['nopaging'] = true;
+			$args['date_query'] = $date_query; // Don't use date-based query if pagination is enabled
+		}
 
 		$query = new \WP_Query ( $args );		
 
 		// Add attributes for debugging purposes
 		$xml->addAttribute('generated', date(\DateTime::RSS));
+		if($page) {
+			$xml->addAttribute('page', $page);
+			$xml->addAttribute('maxpages', $query->max_num_pages);
+		} 
 
 		// Add site url to top of sitemap
 		$home = $xml->addChild('url');
@@ -211,7 +226,7 @@ class XMLSitemap {
 	 * @link http://stackoverflow.com/questions/4832357/whats-the-difference-between-text-xml-vs-application-xml-for-webservice-respons
 	 */
 	function add_http_headers() {
-		if ( ! preg_match( '/sitemap\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
+		if ( ! preg_match( '/sitemap\.xml/', $_SERVER['REQUEST_URI'] ) ) {
 			return;
 		}
 		header('Content-Type: application/xml; charset=utf-8' );

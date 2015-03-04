@@ -43,10 +43,14 @@ class XMLSitemap {
 
 		add_action( 'init', array( &$this, 'init_xml_sitemap' ) );
 
+		$this->cache_group = $this::slug;
+
 		$this->sitemap_url = get_bloginfo('url').'/sitemap.xml';
-		$this->cache_key = $this::slug . ':' . $this->sitemap_url;
+		$this->cache_key = $this->sitemap_url;
+
 		$this->sitemap_index_url = get_bloginfo('url').'/sitemapindex.xml';
-		$this->sitemap_index_cache_key = $this::slug . ':' . $this->sitemap_index_url;
+		$this->sitemap_index_cache_key = $this->sitemap_index_url;
+
 		$this->posts_per_page = 100;
 
 	}
@@ -62,7 +66,7 @@ class XMLSitemap {
 			add_action( 'send_headers', array( &$this, 'add_http_headers' ) );
 			add_action( 'wp_head', array( &$this, 'append_sitemap_link_tag' ) );
 			add_filter( 'plugin_action_links_'.plugin_basename(__FILE__), array( &$this, 'plugin_settings_link' ) );
-			// add_filter( 'query_vars', array( &$this, 'add_query_vars' ));
+			add_filter( 'query_vars', array( &$this, 'add_query_vars' ));
 		}
 
 		add_filter( 'robots_txt', array( &$this, 'robots_modify' ) );
@@ -95,10 +99,10 @@ class XMLSitemap {
 			return;
 		}
 
-		$xml = wp_cache_get( $this->cache_key );
+		$xml = wp_cache_get( $this->cache_key, $this->cache_group );
 		if ( false === $xml ) {
 			$xml = $this->get_sitemap_xml();
-			wp_cache_set( $this->cache_key, $xml );
+			wp_cache_set( $this->cache_key, $xml, $this->cache_group );
 		} 
 
 		status_header(200);
@@ -117,10 +121,10 @@ class XMLSitemap {
 			return;
 		}
 
-		$xml = wp_cache_get( $this->sitemap_index_cache_key );
+		$xml = wp_cache_get( $this->sitemap_index_cache_key, $this->cache_group );
 		if ( false === $xml ) {
 			$xml = $this->get_sitemap_index_xml();
-			wp_cache_set( $this->sitemap_index_cache_key, $xml );
+			wp_cache_set( $this->sitemap_index_cache_key, $xml, $this->cache_group );
 		} 
 
 		status_header(200);
@@ -143,7 +147,7 @@ class XMLSitemap {
 		$page = get_query_var( 'page', 0 );
 
 		// Add parameter to show all entries
-		if( (get_query_var( 'show', 0 )) == 'all') { 
+		if( (get_query_var( 'show_all', 0 )) ) { 
 			$show_all = true;
 		} else {
 			$show_all = false;
@@ -327,7 +331,7 @@ class XMLSitemap {
 	 * Register Query Argument
 	 */
 	function add_query_vars($public_query_vars) {
-	    $public_query_vars[] = 'show';
+	    $public_query_vars[] = 'show_all';
 	    return $public_query_vars;
 	}
 
@@ -366,15 +370,25 @@ class XMLSitemap {
 	 * Clear XML Sitemap cache for this site
 	 */
 	function clear_sitemap_cache( $post_id ){
-		if ( ! wp_is_post_revision( $post_id ) ){
-		
-			// wp_cache_delete doesn't seem to work perfectly with W3TC
-			// It only seems to work on post update, not saving of a new post
-			// However, wp_cache_delete works well on WPEngine 
-			wp_cache_delete( $this->cache_key );
-			wp_cache_delete( $this->sitemap_index_cache_key );
 
+		if ( wp_is_post_revision( $post_id ) ){
+			echo "is a revision";
+			return;
 		}
+
+		if ( ! in_array( get_post_status( $post_id ), array( 'publish', 'trash' )) ) {
+			echo "not published or trash";
+			return;
+		}
+
+		// wp_cache_delete doesn't seem to work perfectly with W3TC
+		// It only seems to work on post update, not saving of a new post
+		// However, wp_cache_delete works well on WPEngine 
+		wp_cache_delete( $this->cache_key, $this->cache_group );
+		wp_cache_delete( $this->sitemap_index_cache_key, $this->cache_group );
+
+		echo "ran wp_cache_delete on post ID $post_id";
+
 	}
 
 	/**

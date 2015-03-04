@@ -70,8 +70,8 @@ class XMLSitemap {
 	function plugin_settings_link($links) { 
 
 		$sitemaps = array(
-			'Full Sitemap' => '/sitemapindex.xml',
-			'Sitemap Index' => '/sitemap-all.xml',
+			'Full Sitemap' => '/sitemap-all.xml',
+			'Sitemap Index' => '/sitemapindex.xml',
 			'Sitemap' => '/sitemap.xml',
 		);
 

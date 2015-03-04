@@ -10,16 +10,18 @@ Provides an XML Sitemap with Google News and Image Sitemap attributes. Supports 
 == Description ==
 This plugin automatically generates an XML sitemap and advertises itself to search engines in robots.txt and your page header.
 
-It is designed to be run with no human intervention. Therefore, this plugin contains no options, buttons, switches, or levers.
+It is designed to be run with no human intervention. Therefore, this plugin contains no options.
 
 Requires at least PHP 5.3.0.
 
 = Features =
 
-* Generates an XML sitemap at the root of your site (e.g. http://example.com/sitemap.xml)
-* Generates an XML sitemap index at the root of your site (e.g. http://example.com/sitemapindex.xml)
+* Generates a XML sitemap at the root of your site, with content modifed only in the last week (e.g. <code>http://example.com/sitemap.xml</code>)
+* Generates a complete XML sitemap, with all content in your system (e.g. <code>http://example.com/sitemap-all.xml</code>)
+* Generates a paginated XML sitemap index (e.g. <code>http://example.com/sitemapindex.xml</code>)
+
 * Includes custom post types
-* Advertises sitemap index in <code>robots.txt</code> (e.g. Sitemap: http://example.com/sitemap.xml)
+* Advertises sitemap index in <code>robots.txt</code> (e.g. <code>Sitemap: http://example.com/sitemap.xml</code>)
 * Advertises itself in HTML HEAD with <code>link rel-sitemap</code> tag (See http://microformats.org/wiki/rel-sitemap)
 * Follows the <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> schemas
 * <a href="http://en.support.wordpress.com/featured-images/">Featured Images</a> are included automatically 
@@ -35,7 +37,7 @@ Requires at least PHP 5.3.0.
 
 = Testing = 
 1. Test it by going to <code>/sitemap.xml</code> or <code>/sitemapindex.xml</code> at your site's root
-2. Validate your sitemap at <a href="http://www.validome.org/google/">validome.org/google/</a>
+2. Validate your sitemap at <a href="http://www.validome.org/google/">validome.org/google</a>
 3. Submit your sitemap to <a href="https://www.google.com/webmasters/tools">Google Webmaster Tools</a>
 
 == Frequently Asked Questions ==
@@ -64,7 +66,4 @@ This ensures that search engines are aware of content changes.
 
 = I don't see a link rel-sitemap tag in my header. Why not? =
 
-Make sure your theme's template includes <code><?php wp_head(); ?></code> in the header. 
-
-== Screenshots ==
-1. http://test/test.jpg
+Make sure your theme's template includes <code><?php wp_head(); ?></code> in the header.

@@ -4,7 +4,7 @@ Plugin Name: News and Image XML Sitemap
 Plugin URI: http://
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.5.0
+Version: 0.5.3
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
@@ -43,15 +43,8 @@ class XMLSitemap {
 
 		add_action( 'init', array( &$this, 'init_xml_sitemap' ) );
 
-		$this->cache_group = $this::slug;
-
-		$this->sitemap_url = get_bloginfo('url').'/sitemap.xml';
-		$this->cache_key = $this->sitemap_url;
-
-		$this->sitemap_index_url = get_bloginfo('url').'/sitemapindex.xml';
-		$this->sitemap_index_cache_key = $this->sitemap_index_url;
-
 		$this->posts_per_page = 100;
+		$this->status = null;
 
 	}
   
@@ -62,15 +55,12 @@ class XMLSitemap {
 
 		if(get_option('blog_public')) {
 			add_action( 'template_redirect', array( &$this, 'render_sitemap' ) );
-			add_action( 'template_redirect', array( &$this, 'render_sitemap_index' ) );
-			add_action( 'send_headers', array( &$this, 'add_http_headers' ) );
 			add_action( 'wp_head', array( &$this, 'append_sitemap_link_tag' ) );
 			add_filter( 'plugin_action_links_'.plugin_basename(__FILE__), array( &$this, 'plugin_settings_link' ) );
 			add_filter( 'query_vars', array( &$this, 'add_query_vars' ));
 		}
 
 		add_filter( 'robots_txt', array( &$this, 'robots_modify' ) );
-		add_action( 'save_post', array( &$this, 'clear_sitemap_cache' ) );
 
 	}
 
@@ -79,59 +69,55 @@ class XMLSitemap {
 	 */
 	function plugin_settings_link($links) { 
 
-		$settings_link = '<a href="'.$this->sitemap_index_url.'">Sitemap Index</a>'; 
-		array_unshift($links, $settings_link); 
+		$sitemaps = array(
+			'Full Sitemap' => '/sitemapindex.xml',
+			'Sitemap Index' => '/sitemap-all.xml',
+			'Sitemap' => '/sitemap.xml',
+		);
 
-		$settings_link = '<a href="'.$this->sitemap_url.'">View Sitemap</a>'; 
-		array_unshift($links, $settings_link); 
+		foreach ($sitemaps as $label => $sitemap) {
+			$url = get_bloginfo('url') . $sitemap;
+			$settings_link = "<a href='${sitemap}'>${label}</a>"; 
+			array_unshift($links, $settings_link);
+		}
 
 		return $links; 
 		
 	}
 
 	/**
-	 * Query for posts, pages, categories, and tags
-	 * Render Sitemap schema with PHP SimpleXMLElement
-	 * http://www.sitemaps.org/
+	 * Check which type of sitemap to generate
+	 * Be it sitemap.xml, sitemap.xml?page=N, sitemap-all.xml, or sitemapindex.xml
 	 */
 	function render_sitemap() {
-		if ( ! preg_match( '/sitemap\.xml/', $_SERVER['REQUEST_URI'] ) ) {
-			return;
-		}
 
-		$xml = wp_cache_get( $this->cache_key, $this->cache_group );
-		if ( false === $xml ) {
+		// match /sitemap.xml with pagination
+		if ( preg_match( '/sitemap\.xml/', $_SERVER['REQUEST_URI'] ) ) {
 			$xml = $this->get_sitemap_xml();
-			wp_cache_set( $this->cache_key, $xml, $this->cache_group );
-		} 
+		}
 
-		status_header(200);
-		print $xml;
-		exit();
+		// match without querystring parameters
+		elseif ( preg_match( '/sitemap-all\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
+			$xml = $this->get_sitemap_xml( $show_all = true );
+		}
 
-	}
+		// match without querystring parameters
+		elseif ( preg_match( '/sitemapindex\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
+			$xml = $this->get_sitemap_index_xml();
+		}
 
-	/**
-	 * Render Sitemap Index
-	 * @link http://www.sitemaps.org/protocol.html#index
-	 * @link https://support.google.com/webmasters/answer/75712?hl=en
-	 */
-	function render_sitemap_index() {
-		if ( ! preg_match( '/sitemapindex\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
+		// this request has nothing to sitemaps
+		else {
 			return;
 		}
 
-		$xml = wp_cache_get( $this->sitemap_index_cache_key, $this->cache_group );
-		if ( false === $xml ) {
-			$xml = $this->get_sitemap_index_xml();
-			wp_cache_set( $this->sitemap_index_cache_key, $xml, $this->cache_group );
-		} 
-
-		status_header(200);
+		// print XML and exit
+		$this->add_http_headers();
 		print $xml;
 		exit();
 
 	}
+
 
 	/**
 	 * Generate XML Sitemap with SimpleXMLElement
@@ -139,19 +125,12 @@ class XMLSitemap {
 	 * @todo Make number of posts configurable via querystring
 	 * @link http://support.google.com/webmasters/answer/183668 ()
 	 */
-	function get_sitemap_xml() {
+	function get_sitemap_xml($show_all = false) {
 
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-news/0.9 http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd"></urlset>');
 
 		// Setup Pagination	
 		$page = get_query_var( 'page', 0 );
-
-		// Add parameter to show all entries
-		if( (get_query_var( 'show_all', 0 )) ) { 
-			$show_all = true;
-		} else {
-			$show_all = false;
-		}
 
 		// Get available public custom post types
 		$custom_post_types = get_post_types(array(
@@ -194,11 +173,17 @@ class XMLSitemap {
 			$xml->addAttribute('maxpages', $query->max_num_pages);
 		} 
 
+		if(!$query->have_posts()) {
+			$this->return_404();
+		}
+
 		// Add site url to top of sitemap
-		$home = $xml->addChild('url');
-		$home->addChild('loc', get_site_url());
-		$home->addChild('changefreq', 'always');
-		$home->addChild('priority', '1.0');
+		if($page <= 1) {
+			$home = $xml->addChild('url');
+			$home->addChild('loc', get_site_url());
+			$home->addChild('changefreq', 'always');
+			$home->addChild('priority', '1.0');
+		}
 
 		while ( $query->have_posts() ) : $query->the_post();
 			
@@ -271,8 +256,11 @@ class XMLSitemap {
 	/**
 	 * Generate XML Sitemap Index with SimpleXMLElement
 	 * @return string
+	 * @todo send Last Modified Header
 	 */
 	function get_sitemap_index_xml() {
+
+		$sitemap_url = get_bloginfo('url') . '/sitemap.xml';
 
 		// Get the most recently modified post/page/custom date
 		$last_modified_date = null;
@@ -292,13 +280,13 @@ class XMLSitemap {
 			'posts_per_page' => 1
 		);
 
+		// Run WP_Query
 		$query = new \WP_Query ( $args );
 
 		// Set the last modified date to that of the latest post
 		while ( $query->have_posts() ) : $query->the_post();
 			$last_modified_date = get_the_modified_date(DATE_W3C);
 		endwhile;
-
 
 		// Initialize the XML for SitemapIndex
 		$xml = new \SimpleXMLElement('<?xml version="1.0" encoding="utf-8" ?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>');
@@ -307,7 +295,7 @@ class XMLSitemap {
 		$xml->addAttribute('generated', date(\DateTime::RSS));
 
 		$item = $xml->addChild('sitemap');
-		$item->addChild('loc', $this->sitemap_url);
+		$item->addChild('loc', $sitemap_url);
 		$item->addChild('lastmod', $last_modified_date ); 
 
 		$total_entries = wp_count_posts()->publish + wp_count_posts('page')->publish; // TODO: Count all posts, pages and custom post types
@@ -316,7 +304,7 @@ class XMLSitemap {
 
 		for ($i=1; $i <= $number_of_sitemaps_in_index; $i++) { 
 			$item = $xml->addChild('sitemap');
-			$item->addChild('loc', $this->sitemap_url . "?page={$i}");
+			$item->addChild('loc', $sitemap_url . "?page={$i}");
 			$item->addChild('lastmod', $last_modified_date ); 
 		}
 
@@ -339,18 +327,15 @@ class XMLSitemap {
 	 * Append necessary HTTP headers for serving XML 
 	 * @link http://codex.wordpress.org/Plugin_API/Action_Reference/send_headers
 	 * @link http://stackoverflow.com/questions/4832357/whats-the-difference-between-text-xml-vs-application-xml-for-webservice-respons
+	 * @todo Add last-modified headers
 	 */
 	function add_http_headers() {
 
-		if ( preg_match( '/sitemap\.xml/', $_SERVER['REQUEST_URI'] ) ) {
-			header('Content-Type: application/xml; charset=utf-8');
-		}
-		else if ( preg_match( '/sitemapindex\.xml$/', $_SERVER['REQUEST_URI'] ) ) {
-			header('Content-Type: application/xml; charset=utf-8');
-		} 
-		else {
-			return;
-		}
+		// print HTTP OK status; template_redirect might not do that for you
+		status_header(200);
+
+		// Send XML headers
+		header('Content-Type: application/xml; charset=utf-8');
  
 	}
 
@@ -362,33 +347,19 @@ class XMLSitemap {
 	 */
 	function append_sitemap_link_tag() {
 		if (!is_admin()) {
-			echo '<link rel="sitemap" href="'.$this->sitemap_url.'" />' . PHP_EOL;
+			$sitemap = get_bloginfo('url') . '/sitemap.xml';
+			echo '<link rel="sitemap" href="' . $sitemap . '" />' . PHP_EOL;
 		}
 	}
 
 	/**
-	 * Clear XML Sitemap cache for this site
+	 * Force 404 Response
 	 */
-	function clear_sitemap_cache( $post_id ){
-
-		if ( wp_is_post_revision( $post_id ) ){
-			echo "is a revision";
-			return;
-		}
-
-		if ( ! in_array( get_post_status( $post_id ), array( 'publish', 'trash' )) ) {
-			echo "not published or trash";
-			return;
-		}
-
-		// wp_cache_delete doesn't seem to work perfectly with W3TC
-		// It only seems to work on post update, not saving of a new post
-		// However, wp_cache_delete works well on WPEngine 
-		wp_cache_delete( $this->cache_key, $this->cache_group );
-		wp_cache_delete( $this->sitemap_index_cache_key, $this->cache_group );
-
-		echo "ran wp_cache_delete on post ID $post_id";
-
+	function return_404() {
+		status_header(404);
+		nocache_headers();
+		include( get_404_template() );
+		exit;
 	}
 
 	/**

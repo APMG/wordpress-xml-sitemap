@@ -198,6 +198,11 @@ class XMLSitemap {
 			$item->addChild('loc', get_the_permalink());
 			$item->addChild('lastmod', get_the_modified_date(DATE_W3C) );
 
+			// get get_the_modified_date from the first tiem for our Last Modified HTTP header
+			if(!$this->last_modified_header) {
+				$this->last_modified_header = get_the_modified_date($this::UTC_DATE_FORMAT);
+			}
+
 			if ( has_post_thumbnail() ) {
 
 				$featured_image = get_post(get_post_thumbnail_id());

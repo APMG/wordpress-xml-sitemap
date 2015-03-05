@@ -1,0 +1,3 @@
+tests/_output/*
+tests/acceptance/AcceptanceTester.php
+tests/unit/UnitTester.php

@@ -39,6 +39,12 @@ Requires at least PHP 5.3.0.
 2. Validate your sitemap at <a href="http://www.validome.org/google/">validome.org/google</a>
 3. Submit your sitemap to <a href="https://www.google.com/webmasters/tools">Google Webmaster Tools</a>
 
+### Unit Testing ###
+This plugin is tested with <a href="http://codeception.com/">Codeception</a>
+
+1. Update <code>codeception.yml</code> with your blog's base URL
+2. Run <code>codecept run</code>
+
 ## Frequently Asked Questions ##
 
 ### What custom post types are included? ###

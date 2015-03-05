@@ -363,10 +363,9 @@ class XMLSitemap {
 	}
 
 	/**
-	 * Advertise in robots.txt 
+	 * Advertise Sitemaps in Robots.txt 
 	 * @link https://trepmal.com/2011/04/03/change-the-virtual-robots-txt-file/
 	 * @link http://wordpress.stackexchange.com/questions/38859/create-unique-robots-txt-for-every-site-on-multisite-installation
-	 * @todo return sitemap index files instead of sitemaps
 	 * @return string
 	 */
 	function robots_modify( $output ) {
@@ -381,22 +380,20 @@ class XMLSitemap {
 				'deleted'    => false,
 			); 
 
-			/**
-			 * @todo Cache wp_get_sites call for 60 minutes (useful for large networks)
-			 * @todo Clear cache on and 'wpmu_create_blog' and 'update_option_blog_public' and related hooks
-			 * @link https://core.trac.wordpress.org/browser/tags/3.9.1/src/wp-includes/ms-functions.php#L2061
-			 */
-
 			$sites = wp_get_sites( $args );
 
 			foreach($sites as $site) {
 				$url = 'http://' . $site['domain'] . $site['path'] . 'sitemap.xml';
+				$output .= 'Sitemap: ' . $url . PHP_EOL;
+				$url = 'http://' . $site['domain'] . $site['path'] . 'sitemapindex.xml';
 				$output .= 'Sitemap: ' . $url . PHP_EOL;
 			}
 
 		// Not Multisite
 		} else {
 			if(get_option('blog_public')) {
+				$url = get_bloginfo('url') . '/sitemap.xml';
+				$output .= 'Sitemap: ' . $url . PHP_EOL;
 				$url = get_bloginfo('url') . '/sitemapindex.xml';
 				$output .= 'Sitemap: ' . $url . PHP_EOL;
 			}

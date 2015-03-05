@@ -34,6 +34,7 @@ class XMLSitemap {
 	const slug = 'xml_sitemap';
 	const ns_sitemap_image = 'http://www.google.com/schemas/sitemap-image/1.1';	
 	const ns_sitemap_news = 'http://www.google.com/schemas/sitemap-news/0.9';
+	const UTC_DATE_FORMAT = 'D, d M Y H:i:s T';
 
 	function __construct() {
 
@@ -46,6 +47,9 @@ class XMLSitemap {
 		// number of items included in paginated sitemap
 		// could probably increase this number, but keeping queries lightweight
 		$this->posts_per_page = 100; 
+
+		// last modified date appended as HTTP Header
+		$this->last_modified_header = null;
 	}
   
 	/**
@@ -289,6 +293,7 @@ class XMLSitemap {
 		// Set the last modified date to that of the latest post
 		while ( $query->have_posts() ) : $query->the_post();
 			$last_modified_date = get_the_modified_date(DATE_W3C);
+			$this->last_modified_header = get_the_modified_date($this::UTC_DATE_FORMAT); 
 		endwhile;
 
 		// Initialize the XML for SitemapIndex
@@ -332,7 +337,12 @@ class XMLSitemap {
 
 		// Send XML headers
 		header('Content-Type: application/xml; charset=utf-8');
- 
+
+		// Send Last Modified Headers
+		if($this->last_modified_header) {
+			header('Last-Modified: ' . $this->last_modified_header );
+		}
+		
 	}
 
 	/**

@@ -43,9 +43,9 @@ class XMLSitemap {
 
 		add_action( 'init', array( &$this, 'init_xml_sitemap' ) );
 
-		$this->posts_per_page = 100;
-		$this->status = null;
-
+		// number of items included in paginated sitemap
+		// could probably increase this number, but keeping queries lightweight
+		$this->posts_per_page = 100; 
 	}
   
 	/**
@@ -138,9 +138,10 @@ class XMLSitemap {
 		   '_builtin' => false
 		)); 
 
+		// Limit/filter posts from last week
 		$date_query = array(
 			array(
-				'after' => '1 week ago' // filter posts from last week
+				'after' => '1 week ago' 
 			)
 		);
 
@@ -163,6 +164,7 @@ class XMLSitemap {
 			$args['date_query'] = $date_query; // Don't use date-based query if pagination is enabled
 		}
 
+		// Run WP_Query
 		$query = new \WP_Query ( $args );		
 
 		// Add attributes for debugging purposes
@@ -172,6 +174,7 @@ class XMLSitemap {
 			$xml->addAttribute('maxpages', $query->max_num_pages);
 		} 
 
+		// Just exit with 404 response if no posts returned
 		if(!$query->have_posts()) {
 			$this->return_404();
 		}
@@ -184,6 +187,7 @@ class XMLSitemap {
 			$home->addChild('priority', '1.0');
 		}
 
+		// Iterate over all posts
 		while ( $query->have_posts() ) : $query->the_post();
 			
 			$item = $xml->addChild('url');
@@ -242,7 +246,7 @@ class XMLSitemap {
 			}
 
 		}
-
+		// Attach query details to attributes if debugging is enabled
 		if(WP_DEBUG) {
 			$xml->addAttribute('debug', get_num_queries() . ' queries in ' . timer_stop( 0 ) . ' seconds' );
 		}
@@ -307,6 +311,7 @@ class XMLSitemap {
 			$item->addChild('lastmod', $last_modified_date ); 
 		}
 
+		// Attach query details to attributes if debugging is enabled
 		if(WP_DEBUG) {
 			$xml->addAttribute('debug', get_num_queries() . ' queries in ' . timer_stop( 0 ) . ' seconds' );
 		}

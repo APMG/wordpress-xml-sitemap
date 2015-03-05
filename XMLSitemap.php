@@ -4,7 +4,7 @@ Plugin Name: News and Image XML Sitemap
 Plugin URI: https://github.com/APMG/wordpress-xml-sitemap
 Description: <a href="http://www.sitemaps.org/">XML Sitemap</a> with <a href="http://www.google.com/schemas/sitemap-news/0.9/">Google News</a> and <a href="http://www.google.com/schemas/sitemap-image/1.1/">Image Sitemap</a> attributes.
 Uses PHP SimpleXML to ensure proper escaping.
-Version: 0.5.3
+Version: 0.5.4
 Author: Paul Wenzel
 Author Email: pwenzel@mpr.org
 License:
@@ -57,7 +57,6 @@ class XMLSitemap {
 			add_action( 'template_redirect', array( &$this, 'render_sitemap' ) );
 			add_action( 'wp_head', array( &$this, 'append_sitemap_link_tag' ) );
 			add_filter( 'plugin_action_links_'.plugin_basename(__FILE__), array( &$this, 'plugin_settings_link' ) );
-			add_filter( 'query_vars', array( &$this, 'add_query_vars' ));
 		}
 
 		add_filter( 'robots_txt', array( &$this, 'robots_modify' ) );
@@ -313,14 +312,6 @@ class XMLSitemap {
 		}
 
 		return $xml->asXML();
-	}
-
-	/**
-	 * Register Query Argument
-	 */
-	function add_query_vars($public_query_vars) {
-	    $public_query_vars[] = 'show_all';
-	    return $public_query_vars;
 	}
 
 	/**
